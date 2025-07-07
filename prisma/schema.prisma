@@ -47,6 +47,7 @@ model Alerta {
   horaFim            Int       // ex: 21 (21h00)
   usuario            Usuario   @relation(fields: [usuarioId], references: [id])
   cidade             Cidade    @relation(fields: [cidadeId], references: [id])
+  logs               LogEnvio[]
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
 }
