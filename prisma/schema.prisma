@@ -1,0 +1,84 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Usuario {
+  id                 String    @id @default(cuid())
+  nome               String
+  email              String    @unique
+  telefone           String
+  senhaHash          String
+  cidadeId           String
+  cidade             Cidade    @relation(fields: [cidadeId], references: [id])
+  aceitaPropaganda   Boolean   @default(false)
+  alertas            Alerta[]
+  logs               LogEnvio[]
+  consentimentos     Consentimento[]
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+}
+
+model Cidade {
+  id                 String    @id @default(cuid())
+  nome               String
+  estado             String
+  latitude           Float
+  longitude          Float
+  populacaoEstimada  Int
+  usuarios           Usuario[]
+  alertas            Alerta[]
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+}
+
+model Alerta {
+  id                 String    @id @default(cuid())
+  usuarioId          String
+  cidadeId           String
+  tipo               AlertaTipo
+  valorGatilho       Float
+  ativo              Boolean   @default(true)
+  horaInicio         Int       // ex: 6 (6h00)
+  horaFim            Int       // ex: 21 (21h00)
+  usuario            Usuario   @relation(fields: [usuarioId], references: [id])
+  cidade             Cidade    @relation(fields: [cidadeId], references: [id])
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+}
+
+enum AlertaTipo {
+  CHUVA
+  VENTO
+  TEMPERATURA
+}
+
+model LogEnvio {
+  id                 String    @id @default(cuid())
+  usuarioId          String
+  alertaId           String?
+  tipoMensagem       MensagemTipo
+  conteudo           String
+  enviadoComSucesso  Boolean
+  dataEnvio          DateTime  @default(now())
+  usuario            Usuario   @relation(fields: [usuarioId], references: [id])
+  alerta             Alerta?   @relation(fields: [alertaId], references: [id])
+}
+
+enum MensagemTipo {
+  ALERTA
+  PROPAGANDA
+}
+
+model Consentimento {
+  id                 String    @id @default(cuid())
+  usuarioId          String
+  meio               String    // WhatsApp, Web, etc.
+  aceite             Boolean
+  data               DateTime  @default(now())
+  usuario            Usuario   @relation(fields: [usuarioId], references: [id])
+}
