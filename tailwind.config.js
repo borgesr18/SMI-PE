@@ -19,3 +19,10 @@ module.exports = {
   },
   plugins: [],
 }
+theme: {
+  extend: {
+    colors: {
+      border: 'hsl(var(--border))', // se estiver usando shadcn
+    },
+  },
+},
