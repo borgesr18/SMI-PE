@@ -1,30 +1,38 @@
 
-# Sistema Meteorológico Inteligente – PE
+# 🌤️ Sistema Meteorológico Inteligente - PE
 
-Sistema web completo e automatizado para previsão do tempo, alertas personalizados e envio de mensagens via WhatsApp, com foco no estado de Pernambuco. Atende inicialmente todas as cidades com mais de 50 mil habitantes, com expansão planejada.
+Este é um sistema web completo e automatizado para previsão do tempo com foco no estado de Pernambuco (PE). O sistema atende inicialmente **todas as cidades com mais de 50 mil habitantes**, com suporte a:
 
-## 🚀 Tecnologias Utilizadas
-- **Next.js 14** + React
-- **Tailwind CSS**
-- **PostgreSQL** (Supabase)
-- **Prisma ORM**
-- **Twilio API** (envio de WhatsApp)
-- **OpenWeatherMap**, **WeatherAPI**, **INMET**, **NOAA/GOES-16**
-- **Recharts** (gráficos)
+- ✅ Previsão meteorológica por latitude e longitude
+- ✅ Envio de alertas personalizados via WhatsApp
+- ✅ Campanhas automatizadas de monetização 1x ao dia
+- ✅ Painel de administração com cadastro de cidades e usuários
 
-## 📁 Funcionalidades
-- Previsão horária e diária por cidade (via coordenadas)
-- Painel meteorológico com satélite, radar e gráficos
-- Alertas configuráveis (chuva, temperatura, vento)
-- Envio automatizado via WhatsApp
-- Propaganda diária opcional para rentabilização
-- Cadastro de usuários com escolha de cidade e consentimento LGPD
+---
 
-## 🔄 Instalação Local
-1. Clone este repositório:
+## 🧠 Tecnologias
+
+- Next.js 14
+- TailwindCSS 4
+- Supabase (Auth + DB + RLS)
+- Prisma ORM
+- Twilio API (ou similar) para WhatsApp
+- Axios para integrações
+- Vercel para deploy
+
+---
+
+## 🛠️ Instalação Local
+
 ```bash
-git clone https://github.com/seu-usuario/sistema-meteo-pe.git
-cd sistema-meteo-pe
+git clone https://github.com/seu-usuario/smi-pe.git
+cd smi-pe
+cp .env.example .env
+npm install
+npx prisma generate
+npx prisma migrate dev
+npm run dev
+
 ```
 
 2. Instale as dependências:
