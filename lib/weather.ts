@@ -248,7 +248,25 @@ export class WeatherService {
     return response.data
   }
 
-  async getFromWeatherStack(lat: number, lon: number): Promise<any> {
+  async getFromOpenWeatherMap(lat: number, lon: number, type: 'current' | 'hourly' | 'daily'): Promise<any> {
+    try {
+      switch (type) {
+        case 'current':
+          return await this.getCurrentWeather(lat, lon)
+        case 'hourly':
+          return await this.getHourlyForecast(lat, lon)
+        case 'daily':
+          return await this.getDailyForecast(lat, lon)
+        default:
+          throw new Error(`Invalid type: ${type}`)
+      }
+    } catch (error) {
+      console.error('Error fetching OpenWeatherMap data:', error)
+      throw error
+    }
+  }
+
+  async getFromWeatherStack(lat: number, lon: number, type: 'current' | 'hourly' | 'daily'): Promise<any> {
     const url = `http://api.weatherstack.com/current`
     const response = await axios.get(url, {
       params: {
@@ -259,11 +277,12 @@ export class WeatherService {
       }
     })
 
+    if (type !== 'current') {
+      console.warn(`WeatherStack only supports current weather, requested: ${type}`)
+    }
+
     return response.data
   }
 }
 
 export const weatherService = new WeatherService()
-
-
-

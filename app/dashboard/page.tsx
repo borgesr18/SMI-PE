@@ -3,6 +3,11 @@
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import DashboardLayout from '@/components/layout/DashboardLayout'
+import { WeatherCard } from '@/components/weather/WeatherCard'
+import { HourlyForecast } from '@/components/weather/HourlyForecast'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
+import { Button } from '@/components/ui/Button'
 import { 
   Cloud, 
   Thermometer, 
@@ -15,8 +20,7 @@ import {
   RefreshCw,
   Settings,
   Bell,
-  History,
-  Moon
+  History
 } from 'lucide-react'
 
 interface WeatherData {
@@ -139,58 +143,35 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className={`min-h-screen ${darkMode ? 'dark bg-gray-900' : 'bg-gradient-to-br from-blue-50 to-indigo-100'}`}>
-      <div className="container mx-auto px-4 py-6">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-8">
+    <DashboardLayout user={user}>
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
           <div>
-            <h1 className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+            <h1 className="text-3xl font-bold text-gray-900">
               Dashboard Meteorológico
             </h1>
-            <p className={`${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+            <p className="text-gray-600">
               Bem-vindo, {user?.email}
             </p>
           </div>
-          <div className="flex items-center space-x-4">
-            <button
-              onClick={() => setDarkMode(!darkMode)}
-              className={`p-2 rounded-lg ${darkMode ? 'bg-gray-800 text-yellow-400' : 'bg-white text-gray-600'} hover:bg-opacity-80 transition-colors`}
-            >
-              {darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-            </button>
-            <button
-              onClick={() => router.push('/alerts')}
-              className={`p-2 rounded-lg ${darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-600'} hover:bg-opacity-80 transition-colors`}
-            >
-              <Bell className="h-5 w-5" />
-            </button>
-            <button
-              onClick={() => router.push('/admin')}
-              className={`p-2 rounded-lg ${darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-600'} hover:bg-opacity-80 transition-colors`}
-            >
-              <Settings className="h-5 w-5" />
-            </button>
-            <button
-              onClick={handleLogout}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-            >
-              Sair
-            </button>
-          </div>
         </div>
 
-        {/* City Selection */}
-        <div className="mb-6">
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2">
-              <MapPin className={`h-5 w-5 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`} />
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <MapPin className="h-5 w-5 text-gray-600" />
+              <span>Seleção de Cidade</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center space-x-4">
               <select
                 value={selectedCity?.id || ''}
                 onChange={(e) => {
                   const city = cities.find(c => c.id === e.target.value)
                   setSelectedCity(city || null)
                 }}
-                className={`px-4 py-2 rounded-lg border ${darkMode ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white border-gray-300 text-gray-900'} focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                className="flex-1 px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 {cities.map((city) => (
                   <option key={city.id} value={city.id}>
@@ -198,166 +179,70 @@ export default function DashboardPage() {
                   </option>
                 ))}
               </select>
+              <Button
+                onClick={loadWeatherData}
+                disabled={refreshing}
+                className="flex items-center space-x-2"
+              >
+                <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+                <span>Atualizar</span>
+              </Button>
             </div>
-            <button
-              onClick={loadWeatherData}
-              disabled={refreshing}
-              className={`flex items-center space-x-2 px-4 py-2 rounded-lg ${darkMode ? 'bg-blue-700 hover:bg-blue-600' : 'bg-blue-600 hover:bg-blue-700'} text-white transition-colors disabled:opacity-50`}
-            >
-              <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-              <span>Atualizar</span>
-            </button>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
-        {/* Current Weather */}
         {weatherData && (
-          <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-lg p-6 mb-6`}>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className={`text-xl font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                Condições Atuais
-              </h2>
-              <div className="flex items-center space-x-2">
-                <img 
-                  src={`https://openweathermap.org/img/wn/${weatherData.icon}@2x.png`}
-                  alt={weatherData.description}
-                  className="w-12 h-12"
-                />
-                <span className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'} capitalize`}>
-                  {weatherData.description}
-                </span>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="text-center">
-                <Thermometer className={`h-8 w-8 mx-auto mb-2 ${darkMode ? 'text-red-400' : 'text-red-500'}`} />
-                <p className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                  {Math.round(weatherData.temperature)}°C
-                </p>
-                <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                  Sensação: {Math.round(weatherData.feelsLike)}°C
-                </p>
-              </div>
-
-              <div className="text-center">
-                <Droplets className={`h-8 w-8 mx-auto mb-2 ${darkMode ? 'text-blue-400' : 'text-blue-500'}`} />
-                <p className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                  {weatherData.humidity}%
-                </p>
-                <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Umidade</p>
-              </div>
-
-              <div className="text-center">
-                <Wind className={`h-8 w-8 mx-auto mb-2 ${darkMode ? 'text-green-400' : 'text-green-500'}`} />
-                <p className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                  {Math.round(weatherData.windSpeed)} km/h
-                </p>
-                <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Vento</p>
-              </div>
-
-              <div className="text-center">
-                <Gauge className={`h-8 w-8 mx-auto mb-2 ${darkMode ? 'text-purple-400' : 'text-purple-500'}`} />
-                <p className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                  {Math.round(weatherData.pressure)} hPa
-                </p>
-                <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Pressão</p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4 mt-4">
-              <div className="text-center">
-                <Sun className={`h-6 w-6 mx-auto mb-1 ${darkMode ? 'text-yellow-400' : 'text-yellow-500'}`} />
-                <p className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                  UV: {weatherData.uvIndex}
-                </p>
-              </div>
-              <div className="text-center">
-                <Eye className={`h-6 w-6 mx-auto mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`} />
-                <p className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                  Visibilidade: {Math.round(weatherData.visibility / 1000)} km
-                </p>
-              </div>
-            </div>
-          </div>
+          <WeatherCard weatherData={weatherData} />
         )}
 
-        {/* Hourly Forecast */}
         {hourlyForecast.length > 0 && (
-          <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-lg p-6 mb-6`}>
-            <h2 className={`text-xl font-semibold mb-4 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-              Previsão Horária
-            </h2>
-            <div className="overflow-x-auto">
-              <div className="flex space-x-4 pb-2">
-                {hourlyForecast.map((hour, index) => (
-                  <div key={index} className="flex-shrink-0 text-center min-w-[80px]">
-                    <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'} mb-2`}>
-                      {hour.time}
-                    </p>
-                    <img 
-                      src={`https://openweathermap.org/img/wn/${hour.icon}.png`}
-                      alt="Weather icon"
-                      className="w-8 h-8 mx-auto mb-2"
-                    />
-                    <p className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                      {Math.round(hour.temperature)}°C
-                    </p>
-                    <p className={`text-xs ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}>
-                      {hour.precipitation}mm
-                    </p>
-                    <p className={`text-xs ${darkMode ? 'text-green-400' : 'text-green-600'}`}>
-                      {Math.round(hour.windSpeed)} km/h
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
+          <HourlyForecast forecast={hourlyForecast} />
         )}
 
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <button
-            onClick={() => router.push('/alerts')}
-            className={`${darkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-white hover:bg-gray-50'} rounded-xl shadow-lg p-6 text-left transition-colors`}
-          >
-            <Bell className={`h-8 w-8 mb-3 ${darkMode ? 'text-yellow-400' : 'text-yellow-500'}`} />
-            <h3 className={`font-semibold mb-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-              Configurar Alertas
-            </h3>
-            <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-              Configure alertas personalizados para chuva, vento e temperatura
-            </p>
-          </button>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => router.push('/alerts')}>
+            <Card>
+              <CardContent className="p-6">
+                <Bell className="h-8 w-8 mb-3 text-yellow-500" />
+                <h3 className="font-semibold mb-2 text-gray-900">
+                  Configurar Alertas
+                </h3>
+                <p className="text-sm text-gray-600">
+                  Configure alertas personalizados para chuva, vento e temperatura
+                </p>
+              </CardContent>
+            </Card>
+          </div>
 
-          <button
-            onClick={() => router.push('/history')}
-            className={`${darkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-white hover:bg-gray-50'} rounded-xl shadow-lg p-6 text-left transition-colors`}
-          >
-            <History className={`h-8 w-8 mb-3 ${darkMode ? 'text-blue-400' : 'text-blue-500'}`} />
-            <h3 className={`font-semibold mb-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-              Histórico
-            </h3>
-            <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-              Visualize dados históricos dos últimos 30 dias
-            </p>
-          </button>
+          <div className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => router.push('/history')}>
+            <Card>
+              <CardContent className="p-6">
+                <History className="h-8 w-8 mb-3 text-blue-500" />
+                <h3 className="font-semibold mb-2 text-gray-900">
+                  Histórico
+                </h3>
+                <p className="text-sm text-gray-600">
+                  Visualize dados históricos dos últimos 30 dias
+                </p>
+              </CardContent>
+            </Card>
+          </div>
 
-          <button
-            onClick={() => router.push('/admin')}
-            className={`${darkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-white hover:bg-gray-50'} rounded-xl shadow-lg p-6 text-left transition-colors`}
-          >
-            <Settings className={`h-8 w-8 mb-3 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`} />
-            <h3 className={`font-semibold mb-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-              Administração
-            </h3>
-            <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-              Gerencie usuários, alertas e configurações do sistema
-            </p>
-          </button>
+          <div className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => router.push('/admin')}>
+            <Card>
+              <CardContent className="p-6">
+                <Settings className="h-8 w-8 mb-3 text-gray-500" />
+                <h3 className="font-semibold mb-2 text-gray-900">
+                  Administração
+                </h3>
+                <p className="text-sm text-gray-600">
+                  Gerencie usuários, alertas e configurações do sistema
+                </p>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
-    </div>
+    </DashboardLayout>
   )
 }
