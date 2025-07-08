@@ -9,7 +9,7 @@ export async function GET(request: Request) {
     const lat = parseFloat(searchParams.get('lat') || '0')
     const lon = parseFloat(searchParams.get('lon') || '0')
     const type = (searchParams.get('type') || 'current').toLowerCase()
-    const source = (searchParams.get('source') || 'meteomatics').toLowerCase()
+    const source = (searchParams.get('source') || 'openweathermap').toLowerCase()
 
     if (!lat || !lon) {
       return NextResponse.json(
@@ -53,4 +53,3 @@ export async function GET(request: Request) {
     )
   }
 }
-
