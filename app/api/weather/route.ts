@@ -8,7 +8,8 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const lat = parseFloat(searchParams.get('lat') || '0')
     const lon = parseFloat(searchParams.get('lon') || '0')
-    const type = searchParams.get('type') || 'current'
+    const type = (searchParams.get('type') || 'current').toLowerCase()
+    const source = (searchParams.get('source') || 'meteomatics').toLowerCase()
 
     if (!lat || !lon) {
       return NextResponse.json(
@@ -18,19 +19,27 @@ export async function GET(request: Request) {
     }
 
     let data
-    switch (type) {
-      case 'current':
-        data = await weatherService.getCurrentWeather(lat, lon)
+
+    switch (source) {
+      case 'meteomatics':
+        data = await weatherService.getFromMeteomatics(lat, lon, type as 'current' | 'hourly' | 'daily')
         break
-      case 'hourly':
-        data = await weatherService.getHourlyForecast(lat, lon)
+
+      case 'openweathermap':
+        data = await weatherService.getFromOpenWeatherMap(lat, lon, type as 'current' | 'hourly' | 'daily')
         break
-      case 'daily':
-        data = await weatherService.getDailyForecast(lat, lon)
+
+      case 'accuweather':
+        data = await weatherService.getFromAccuWeather(lat, lon, type as 'current' | 'hourly' | 'daily')
         break
+
+      case 'weatherstack':
+        data = await weatherService.getFromWeatherStack(lat, lon, type as 'current' | 'hourly' | 'daily')
+        break
+
       default:
         return NextResponse.json(
-          { error: 'Invalid weather type' },
+          { error: 'Invalid source specified' },
           { status: 400 }
         )
     }
@@ -44,3 +53,4 @@ export async function GET(request: Request) {
     )
   }
 }
+

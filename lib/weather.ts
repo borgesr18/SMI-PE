@@ -38,6 +38,8 @@ export class WeatherService {
   private backupApiKey: string
   private baseUrl = 'https://api.openweathermap.org/data/2.5'
   private backupUrl = 'https://api.weatherapi.com/v1'
+  private accuweatherKey = process.env.API_KEY_ACCUWEATHER || ''
+  private weatherstackKey = process.env.API_KEY_WEATHERSTACK || ''
 
   constructor() {
     this.apiKey = process.env.API_KEY_WEATHER || ''
@@ -60,11 +62,11 @@ export class WeatherService {
       return {
         temperature: Math.round(data.main.temp),
         humidity: data.main.humidity,
-        windSpeed: Math.round(data.wind.speed * 3.6), // Convert m/s to km/h
+        windSpeed: Math.round(data.wind.speed * 3.6),
         windDirection: data.wind.deg,
         pressure: data.main.pressure,
-        uvIndex: 0, // UV index requires separate API call
-        visibility: data.visibility / 1000, // Convert to km
+        uvIndex: 0,
+        visibility: data.visibility / 1000,
         description: data.weather[0].description,
         icon: data.weather[0].icon,
         rain: data.rain?.['1h'] || 0,
@@ -119,9 +121,9 @@ export class WeatherService {
       })
 
       return response.data.list.slice(0, 24).map((item: any) => ({
-        time: new Date(item.dt * 1000).toLocaleTimeString('pt-BR', { 
-          hour: '2-digit', 
-          minute: '2-digit' 
+        time: new Date(item.dt * 1000).toLocaleTimeString('pt-BR', {
+          hour: '2-digit',
+          minute: '2-digit'
         }),
         temperature: Math.round(item.main.temp),
         rain: item.rain?.['3h'] || 0,
@@ -148,7 +150,7 @@ export class WeatherService {
       })
 
       const dailyData: { [key: string]: any[] } = {}
-      
+
       response.data.list.forEach((item: any) => {
         const date = new Date(item.dt * 1000).toDateString()
         if (!dailyData[date]) {
@@ -161,12 +163,12 @@ export class WeatherService {
         const temps = items.map(item => item.main.temp)
         const rains = items.map(item => item.rain?.['3h'] || 0)
         const winds = items.map(item => item.wind.speed * 3.6)
-        
+
         return {
-          date: new Date(date).toLocaleDateString('pt-BR', { 
-            weekday: 'short', 
-            day: '2-digit', 
-            month: '2-digit' 
+          date: new Date(date).toLocaleDateString('pt-BR', {
+            weekday: 'short',
+            day: '2-digit',
+            month: '2-digit'
           }),
           tempMin: Math.round(Math.min(...temps)),
           tempMax: Math.round(Math.max(...temps)),
@@ -181,6 +183,87 @@ export class WeatherService {
       return []
     }
   }
+
+  async getFromMeteomatics(lat: number, lon: number, type: 'current' | 'hourly' | 'daily'): Promise<any> {
+    const baseUrl = 'https://api.meteomatics.com'
+    const username = process.env.METEOMATICS_USER
+    const password = process.env.METEOMATICS_PASS
+
+    const date = new Date()
+    const isoDate = date.toISOString().split('.')[0] + 'Z'
+
+    let parameter = 't_2m:C'
+    if (type === 'hourly') parameter = 't_2m:C,precip_1h:mm,wind_speed_10m:ms'
+    if (type === 'daily') parameter = 't_max_2m_24h:C,t_min_2m_24h:C,precip_24h:mm,wind_speed_10m:ms'
+
+    const url = `${baseUrl}/${isoDate}/${parameter}/${lat},${lon}/json`
+    const auth = Buffer.from(`${username}:${password}`).toString('base64')
+
+    const response = await axios.get(url, {
+      headers: {
+        Authorization: `Basic ${auth}`
+      }
+    })
+
+    const data = response.data
+
+    if (type === 'current') {
+      return {
+        source: 'Meteomatics',
+        temperature: data?.data?.[0]?.coordinates?.[0]?.dates?.[0]?.value || 0,
+        condition: 'Desconhecido',
+        timestamp: new Date().toISOString()
+      }
+    }
+
+    return data
+  }
+
+  async getFromAccuWeather(lat: number, lon: number, type: 'current' | 'hourly' | 'daily'): Promise<any> {
+    const locationUrl = `http://dataservice.accuweather.com/locations/v1/cities/geoposition/search`
+    const locationResponse = await axios.get(locationUrl, {
+      params: {
+        apikey: this.accuweatherKey,
+        q: `${lat},${lon}`
+      }
+    })
+
+    const locationKey = locationResponse.data.Key
+    if (!locationKey) throw new Error('Invalid location key from AccuWeather')
+
+    let endpoint = ''
+    if (type === 'current') endpoint = `currentconditions/v1/${locationKey}`
+    if (type === 'hourly') endpoint = `forecasts/v1/hourly/12hour/${locationKey}`
+    if (type === 'daily') endpoint = `forecasts/v1/daily/5day/${locationKey}`
+
+    const forecastUrl = `http://dataservice.accuweather.com/${endpoint}`
+    const response = await axios.get(forecastUrl, {
+      params: {
+        apikey: this.accuweatherKey,
+        language: 'pt-br',
+        metric: true
+      }
+    })
+
+    return response.data
+  }
+
+  async getFromWeatherStack(lat: number, lon: number): Promise<any> {
+    const url = `http://api.weatherstack.com/current`
+    const response = await axios.get(url, {
+      params: {
+        access_key: this.weatherstackKey,
+        query: `${lat},${lon}`,
+        units: 'm',
+        language: 'pt'
+      }
+    })
+
+    return response.data
+  }
 }
 
 export const weatherService = new WeatherService()
+
+
+
