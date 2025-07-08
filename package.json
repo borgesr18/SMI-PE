@@ -4,26 +4,23 @@
   "description": "Sistema web completo e automatizado para previsão do tempo, alertas personalizados e envio de mensagens via WhatsApp, com foco no estado de Pernambuco. Atende inicialmente todas as cidades com mais de 50 mil habitantes, com expansão planejada.",
   "private": true,
   "engines": {
-  "node": "20.x"
-},
- "scripts": {
-  "dev": "next dev",
-  "build": "next build",
-  "start": "next start",
-  "lint": "next lint",
-  "db:generate": "prisma generate",
-  "db:migrate": "prisma migrate dev",
-  "db:studio": "prisma studio",
-  "vercel-build": "prisma generate && next build",
-  "db:seed": "tsx prisma/seed.ts"
-},
+    "node": "20.x"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:studio": "prisma studio",
+    "vercel-build": "prisma generate && next build",
+    "db:seed": "tsx prisma/seed.ts"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "twilio": "^4.0.0",
-    "dotenv": "^16.3.1",
-    "prettier": "^3.2.5",
     "@prisma/client": "^6.11.1",
     "@supabase/ssr": "^0.6.1",
     "@supabase/supabase-js": "^2.50.3",
@@ -36,19 +33,21 @@
     "bcryptjs": "^3.0.2",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
+    "dotenv": "^16.3.1",
     "lucide-react": "^0.525.0",
     "next": "^14.2.30",
     "postcss": "^8.5.6",
+    "prettier": "^3.2.5",
     "prisma": "^6.11.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "recharts": "^3.0.2",
     "tailwind-merge": "^3.3.1",
     "tailwindcss": "^3.4.0",
+    "twilio": "^4.23.0",
     "typescript": "^5.8.3"
   },
   "devDependencies": {
     "tsx": "^4.20.3"
-
   }
 }
