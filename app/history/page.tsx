@@ -224,9 +224,9 @@ export default function HistoryPage() {
 
   if (loading) {
     return (
-      <DashboardLayout darkMode={darkMode} setDarkMode={setDarkMode}>
+      <DashboardLayout>
         <div className="flex items-center justify-center h-64">
-          <div className={`text-lg ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+          <div className="text-lg text-gray-900 dark:text-white">
             Carregando histórico meteorológico...
           </div>
         </div>
@@ -235,7 +235,7 @@ export default function HistoryPage() {
   }
 
   return (
-    <DashboardLayout darkMode={darkMode} setDarkMode={setDarkMode}>
+    <DashboardLayout>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h1 className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
