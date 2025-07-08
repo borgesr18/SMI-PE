@@ -38,6 +38,8 @@ export class WeatherService {
   private backupApiKey: string
   private baseUrl = 'https://api.openweathermap.org/data/2.5'
   private backupUrl = 'https://api.weatherapi.com/v1'
+  private accuweatherKey = process.env.API_KEY_ACCUWEATHER || ''
+  private weatherstackKey = process.env.API_KEY_WEATHERSTACK || ''
 
   constructor() {
     this.apiKey = process.env.API_KEY_WEATHER || ''
@@ -216,8 +218,52 @@ export class WeatherService {
 
     return data
   }
+
+  async getFromAccuWeather(lat: number, lon: number, type: 'current' | 'hourly' | 'daily'): Promise<any> {
+    const locationUrl = `http://dataservice.accuweather.com/locations/v1/cities/geoposition/search`
+    const locationResponse = await axios.get(locationUrl, {
+      params: {
+        apikey: this.accuweatherKey,
+        q: `${lat},${lon}`
+      }
+    })
+
+    const locationKey = locationResponse.data.Key
+    if (!locationKey) throw new Error('Invalid location key from AccuWeather')
+
+    let endpoint = ''
+    if (type === 'current') endpoint = `currentconditions/v1/${locationKey}`
+    if (type === 'hourly') endpoint = `forecasts/v1/hourly/12hour/${locationKey}`
+    if (type === 'daily') endpoint = `forecasts/v1/daily/5day/${locationKey}`
+
+    const forecastUrl = `http://dataservice.accuweather.com/${endpoint}`
+    const response = await axios.get(forecastUrl, {
+      params: {
+        apikey: this.accuweatherKey,
+        language: 'pt-br',
+        metric: true
+      }
+    })
+
+    return response.data
+  }
+
+  async getFromWeatherStack(lat: number, lon: number): Promise<any> {
+    const url = `http://api.weatherstack.com/current`
+    const response = await axios.get(url, {
+      params: {
+        access_key: this.weatherstackKey,
+        query: `${lat},${lon}`,
+        units: 'm',
+        language: 'pt'
+      }
+    })
+
+    return response.data
+  }
 }
 
 export const weatherService = new WeatherService()
+
 
 
