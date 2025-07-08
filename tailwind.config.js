@@ -9,7 +9,7 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        border: '#E4E4E7', // define corretamente a cor usada por `border-border`
+        border: '#E4E4E7', // isso resolve o erro
         background: '#FAFAFA',
         primary: '#0F172A',
         secondary: '#1E293B',
