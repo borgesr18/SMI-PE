@@ -3,12 +3,15 @@
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import DashboardLayout from '@/components/layout/DashboardLayout'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
+import { Button } from '@/components/ui/Button'
+import { Badge } from '@/components/ui/Badge'
 import { 
   Bell, 
   Plus, 
   Edit, 
-  Trash2, 
-  ArrowLeft,
+  Trash2,
   Cloud,
   Thermometer,
   Wind,
@@ -215,41 +218,34 @@ export default function AlertsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="container mx-auto px-4 py-6">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center space-x-4">
-            <button
-              onClick={() => router.push('/dashboard')}
-              className="p-2 rounded-lg bg-white text-gray-600 hover:bg-gray-50 transition-colors"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </button>
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">
-                Configuração de Alertas
-              </h1>
-              <p className="text-gray-600">
-                Configure alertas personalizados para condições meteorológicas
-              </p>
-            </div>
+    <DashboardLayout user={user}>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">
+              Configuração de Alertas
+            </h1>
+            <p className="text-gray-600">
+              Configure alertas personalizados para condições meteorológicas
+            </p>
           </div>
-          <button
+          <Button
             onClick={() => setShowForm(true)}
-            className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="flex items-center space-x-2"
           >
             <Plus className="h-4 w-4" />
             <span>Novo Alerta</span>
-          </button>
+          </Button>
         </div>
 
-        {/* Alert Form */}
         {showForm && (
-          <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
-            <h2 className="text-xl font-semibold mb-4">
-              {editingAlert ? 'Editar Alerta' : 'Novo Alerta'}
-            </h2>
+          <Card>
+            <CardHeader>
+              <CardTitle>
+                {editingAlert ? 'Editar Alerta' : 'Novo Alerta'}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -342,107 +338,104 @@ export default function AlertsPage() {
               </div>
 
               <div className="flex justify-end space-x-4">
-                <button
+                <Button
                   type="button"
+                  variant="outline"
                   onClick={() => {
                     setShowForm(false)
                     setEditingAlert(null)
                   }}
-                  className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                 >
                   Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                >
+                </Button>
+                <Button type="submit">
                   {editingAlert ? 'Atualizar' : 'Criar'} Alerta
-                </button>
+                </Button>
               </div>
             </form>
-          </div>
+            </CardContent>
+          </Card>
         )}
 
-        {/* Alerts List */}
         <div className="space-y-4">
           {alerts.length === 0 ? (
-            <div className="bg-white rounded-xl shadow-lg p-8 text-center">
-              <Bell className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                Nenhum alerta configurado
-              </h3>
-              <p className="text-gray-600 mb-4">
-                Configure seu primeiro alerta para receber notificações sobre condições meteorológicas
-              </p>
-              <button
-                onClick={() => setShowForm(true)}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                Criar Primeiro Alerta
-              </button>
-            </div>
+            <Card>
+              <CardContent className="p-8 text-center">
+                <Bell className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  Nenhum alerta configurado
+                </h3>
+                <p className="text-gray-600 mb-4">
+                  Configure seu primeiro alerta para receber notificações sobre condições meteorológicas
+                </p>
+                <Button onClick={() => setShowForm(true)}>
+                  Criar Primeiro Alerta
+                </Button>
+              </CardContent>
+            </Card>
           ) : (
             alerts.map((alert) => (
-              <div key={alert.id} className="bg-white rounded-xl shadow-lg p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    {getAlertIcon(alert.tipo)}
-                    <div>
-                      <h3 className="font-semibold text-gray-900">
-                        Alerta de {alert.tipo.toLowerCase()}
-                      </h3>
-                      <div className="flex items-center space-x-4 text-sm text-gray-600">
-                        <span className="flex items-center space-x-1">
-                          <MapPin className="h-4 w-4" />
-                          <span>{alert.cidade.nome} - {alert.cidade.estado}</span>
-                        </span>
-                        <span className="flex items-center space-x-1">
-                          <Clock className="h-4 w-4" />
-                          <span>{alert.horaInicio}h às {alert.horaFim}h</span>
-                        </span>
+              <Card key={alert.id}>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      {getAlertIcon(alert.tipo)}
+                      <div>
+                        <h3 className="font-semibold text-gray-900">
+                          Alerta de {alert.tipo.toLowerCase()}
+                        </h3>
+                        <div className="flex items-center space-x-4 text-sm text-gray-600">
+                          <span className="flex items-center space-x-1">
+                            <MapPin className="h-4 w-4" />
+                            <span>{alert.cidade.nome} - {alert.cidade.estado}</span>
+                          </span>
+                          <span className="flex items-center space-x-1">
+                            <Clock className="h-4 w-4" />
+                            <span>{alert.horaInicio}h às {alert.horaFim}h</span>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-4">
+                      <div className="text-right">
+                        <p className="font-semibold text-gray-900">
+                          {alert.valorGatilho} {getAlertUnit(alert.tipo)}
+                        </p>
+                        <Badge variant={alert.ativo ? 'success' : 'danger'}>
+                          {alert.ativo ? 'Ativo' : 'Inativo'}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => toggleAlert(alert)}
+                        >
+                          <ToggleLeft className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEdit(alert)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDelete(alert.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-4">
-                    <div className="text-right">
-                      <p className="font-semibold text-gray-900">
-                        {alert.valorGatilho} {getAlertUnit(alert.tipo)}
-                      </p>
-                      <p className={`text-sm ${alert.ativo ? 'text-green-600' : 'text-red-600'}`}>
-                        {alert.ativo ? 'Ativo' : 'Inativo'}
-                      </p>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <button
-                        onClick={() => toggleAlert(alert)}
-                        className={`p-2 rounded-lg transition-colors ${
-                          alert.ativo 
-                            ? 'bg-green-100 text-green-600 hover:bg-green-200' 
-                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                        }`}
-                      >
-                        <ToggleLeft className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => handleEdit(alert)}
-                        className="p-2 rounded-lg bg-blue-100 text-blue-600 hover:bg-blue-200 transition-colors"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(alert.id)}
-                        className="p-2 rounded-lg bg-red-100 text-red-600 hover:bg-red-200 transition-colors"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             ))
           )}
         </div>
       </div>
-    </div>
+    </DashboardLayout>
   )
 }
