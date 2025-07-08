@@ -1,26 +1,22 @@
-import type { Config } from "tailwindcss";
+import type { Config } from 'tailwindcss'
 
 const config: Config = {
   content: [
-    "./app/**/*.{ts,tsx}",
-    "./components/**/*.{ts,tsx}",
-    "./src/**/*.{ts,tsx}",
+    './app/**/*.{ts,tsx}',
+    './components/**/*.{ts,tsx}',
+    './pages/**/*.{ts,tsx}',
   ],
   theme: {
     extend: {
       colors: {
-        primary: "#22c55e",
-        secondary: "#0f172a",
-        background: "#f8fafc",
-        muted: "#e2e8f0",
-        border: "#cbd5e1",
-        card: "#ffffff",
+        border: '#E4E4E7', // define corretamente a cor usada por `border-border`
+        background: '#FAFAFA',
+        primary: '#0F172A',
+        secondary: '#1E293B',
       },
     },
   },
   plugins: [],
-};
+}
 
-export default config;
-
-
+export default config
