@@ -3,17 +3,17 @@
   "version": "1.0.0",
   "description": "Sistema web completo e automatizado para previsão do tempo, alertas personalizados e envio de mensagens via WhatsApp, com foco no estado de Pernambuco. Atende inicialmente todas as cidades com mais de 50 mil habitantes, com expansão planejada.",
   "private": true,
-  "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint",
-    "db:generate": "prisma generate",
-    "db:migrate": "prisma migrate dev",
-    "db:studio": "prisma studio",
-    "vercel-build": "prisma generate && next build",
-    "db:seed": "tsx prisma/seed.ts"
-  },
+ "scripts": {
+  "dev": "next dev",
+  "build": "next build",
+  "start": "next start",
+  "lint": "next lint",
+  "db:generate": "prisma generate",
+  "db:migrate": "prisma migrate dev",
+  "db:studio": "prisma studio",
+  "vercel-build": "prisma generate && next build",
+  "db:seed": "tsx prisma/seed.ts"
+},
   "keywords": [],
   "author": "",
   "license": "ISC",
