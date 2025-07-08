@@ -12,7 +12,6 @@ export interface WeatherData {
   icon: string
   rain?: number
   timestamp: Date
-  source: string
 }
 
 export interface HourlyForecast {
@@ -37,16 +36,12 @@ export interface DailyForecast {
 export class WeatherService {
   private apiKey: string
   private backupApiKey: string
-  private accuWeatherKey: string
   private baseUrl = 'https://api.openweathermap.org/data/2.5'
   private backupUrl = 'https://api.weatherapi.com/v1'
-  private accuLocationUrl = 'http://dataservice.accuweather.com/locations/v1/cities/geoposition/search'
-  private accuForecastUrl = 'http://dataservice.accuweather.com/forecasts/v1/'
 
   constructor() {
     this.apiKey = process.env.API_KEY_WEATHER || ''
     this.backupApiKey = process.env.API_KEY_WEATHER_BACKUP || ''
-    this.accuWeatherKey = process.env.ACCUWEATHER_API_KEY || ''
   }
 
   async getCurrentWeather(lat: number, lon: number): Promise<WeatherData> {
@@ -73,8 +68,7 @@ export class WeatherService {
         description: data.weather[0].description,
         icon: data.weather[0].icon,
         rain: data.rain?.['1h'] || 0,
-        timestamp: new Date(),
-        source: 'OpenWeatherMap'
+        timestamp: new Date()
       }
     } catch (error) {
       console.error('Error fetching current weather:', error)
@@ -104,8 +98,7 @@ export class WeatherService {
         description: data.condition.text,
         icon: data.condition.icon,
         rain: data.precip_mm || 0,
-        timestamp: new Date(),
-        source: 'WeatherAPI'
+        timestamp: new Date()
       }
     } catch (error) {
       console.error('Error fetching backup weather data:', error)
@@ -189,49 +182,39 @@ export class WeatherService {
     }
   }
 
-  async getAccuWeatherLocationKey(lat: number, lon: number): Promise<string> {
-    try {
-      const response = await axios.get(this.accuLocationUrl, {
-        params: {
-          apikey: this.accuWeatherKey,
-          q: `${lat},${lon}`
-        }
-      })
-      return response.data.Key
-    } catch (error) {
-      console.error('Error getting AccuWeather location key:', error)
-      throw new Error('Failed to get location key')
+  async getFromMeteomatics(lat: number, lon: number, type: 'current' | 'hourly' | 'daily'): Promise<any> {
+    const baseUrl = 'https://api.meteomatics.com'
+    const username = process.env.METEOMATICS_USER
+    const password = process.env.METEOMATICS_PASS
+
+    const date = new Date()
+    const isoDate = date.toISOString().split('.')[0] + 'Z'
+
+    let parameter = 't_2m:C'
+    if (type === 'hourly') parameter = 't_2m:C,precip_1h:mm,wind_speed_10m:ms'
+    if (type === 'daily') parameter = 't_max_2m_24h:C,t_min_2m_24h:C,precip_24h:mm,wind_speed_10m:ms'
+
+    const url = `${baseUrl}/${isoDate}/${parameter}/${lat},${lon}/json`
+    const auth = Buffer.from(`${username}:${password}`).toString('base64')
+
+    const response = await axios.get(url, {
+      headers: {
+        Authorization: `Basic ${auth}`
+      }
+    })
+
+    const data = response.data
+
+    if (type === 'current') {
+      return {
+        source: 'Meteomatics',
+        temperature: data?.data?.[0]?.coordinates?.[0]?.dates?.[0]?.value || 0,
+        condition: 'Desconhecido',
+        timestamp: new Date().toISOString()
+      }
     }
-  }
 
-  async getAccuWeatherHourly(lat: number, lon: number): Promise<HourlyForecast[]> {
-    try {
-      const locationKey = await this.getAccuWeatherLocationKey(lat, lon)
-      const url = `${this.accuForecastUrl}hourly/12hour/${locationKey}`
-
-      const response = await axios.get(url, {
-        params: {
-          apikey: this.accuWeatherKey,
-          language: 'pt-br',
-          metric: true
-        }
-      })
-
-      return response.data.map((item: any) => ({
-        time: new Date(item.DateTime).toLocaleTimeString('pt-BR', {
-          hour: '2-digit',
-          minute: '2-digit'
-        }),
-        temperature: Math.round(item.Temperature.Value),
-        rain: item.PrecipitationProbability || 0,
-        windSpeed: Math.round(item.Wind.Speed.Value),
-        description: item.IconPhrase,
-        icon: `https://developer.accuweather.com/sites/default/files/${String(item.WeatherIcon).padStart(2, '0')}-s.png`
-      }))
-    } catch (error) {
-      console.error('Error fetching AccuWeather hourly forecast:', error)
-      return []
-    }
+    return data
   }
 }
 
