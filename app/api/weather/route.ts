@@ -8,8 +8,20 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const lat = parseFloat(searchParams.get('lat') || '0')
     const lon = parseFloat(searchParams.get('lon') || '0')
-    const type = searchParams.get('type') || 'current'
-    const source = searchParams.get('source') || 'meteomatics' // Default para Meteomatics
+    const source = searchParams.get('source') || 'meteomatics' // Default
+    const rawType = searchParams.get('type') || 'current'
+
+    const validTypes = ['current', 'hourly', 'daily'] as const
+    type WeatherType = typeof validTypes[number]
+
+    if (!validTypes.includes(rawType as WeatherType)) {
+      return NextResponse.json(
+        { error: 'Invalid weather type' },
+        { status: 400 }
+      )
+    }
+
+    const type = rawType as WeatherType
 
     if (!lat || !lon) {
       return NextResponse.json(
