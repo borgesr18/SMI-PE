@@ -1,5 +1,4 @@
 // app/api/send-daily-alerts/route.ts
-
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { AlertaTipo, MensagemTipo } from '@prisma/client'
@@ -10,12 +9,11 @@ export async function POST() {
   try {
     const horaAtual = new Date().getHours()
 
-    // 1. Mensagens diárias para todos os usuários
+    // Enviar mensagem diária de previsão para todos os usuários
     const usuarios = await prisma.usuario.findMany({
       where: {
         aceitaPropaganda: true,
         telefone: { not: '' },
-        cidadeId: { not: null },
       },
       include: {
         cidade: true,
@@ -24,48 +22,42 @@ export async function POST() {
 
     for (const usuario of usuarios) {
       const { cidade } = usuario
-      if (!cidade || !usuario.telefone) continue
+      if (!cidade) continue // pula usuários sem cidade vinculada
 
       const previsao = await getPrevisao(cidade.latitude, cidade.longitude)
 
-      const mensagem = `Bom dia, ${usuario.nome}! ☀️
+      const mensagem = `Bom dia, ${usuario.nome}! ☀️\n\n📍 *${cidade.nome} - ${cidade.estado}*\n🌡️ Temperatura: ${previsao.temperatura}°C\n☁️ Condição: ${previsao.descricao}\n🌧️ Chance de chuva: ${previsao.chuva}%\n\n💬 *Patrocínio:*\nExperimente já o novo serviço do SMI-PE com alertas personalizados. Responda com "QUERO" e receba as novidades!`
 
-📍 *${cidade.nome} - ${cidade.estado}*
-🌡️ Temperatura: ${previsao.temperatura}°C
-☁️ Condição: ${previsao.descricao}
-🌧️ Chance de chuva: ${previsao.chuva}%
-
-💬 *Patrocínio:*
-Experimente já o novo serviço do SMI-PE com alertas personalizados. Responda com "QUERO" e receba as novidades!`
-
-      const enviado = await enviarMensagemWhatsApp(usuario.telefone, mensagem).then(() => true).catch(() => false)
+      const enviado = await enviarMensagemWhatsApp(usuario.telefone, mensagem)
 
       await prisma.logEnvio.create({
         data: {
           usuarioId: usuario.id,
           tipoMensagem: MensagemTipo.PROPAGANDA,
           conteudo: mensagem,
-          enviadoComSucesso: enviado,
+          enviadoComSucesso: typeof enviado === 'object' && enviado !== null && 'sid' in enviado,
         },
       })
     }
 
-    // 2. Disparo de alertas ativos se horário for compatível
+    // Enviar alertas cadastrados no horário certo
     const alertas = await prisma.alerta.findMany({
       where: {
         ativo: true,
-        usuario: {
-          telefone: { not: '' },
-        },
       },
       include: {
-        usuario: true,
+        usuario: {
+          select: {
+            nome: true,
+            telefone: true,
+            aceitaPropaganda: true,
+          },
+        },
         cidade: true,
       },
     })
 
     for (const alerta of alertas) {
-      if (!alerta.cidade || !alerta.usuario?.telefone) continue
       if (horaAtual < alerta.horaInicio || horaAtual > alerta.horaFim) continue
 
       const previsao = await getPrevisao(alerta.cidade.latitude, alerta.cidade.longitude)
@@ -75,20 +67,13 @@ Experimente já o novo serviço do SMI-PE com alertas personalizados. Responda c
       if (alerta.tipo === AlertaTipo.CHUVA && chuva >= alerta.valorGatilho) disparar = true
       if (alerta.tipo === AlertaTipo.TEMPERATURA && temperatura >= alerta.valorGatilho) disparar = true
       if (alerta.tipo === AlertaTipo.VENTO) {
-        // lógica para vento, se for implementado
+        // TODO: implementar lógica de vento
       }
 
       if (disparar) {
-        const mensagem = `⚠️ Alerta de ${alerta.tipo.toLowerCase()}!
+        const mensagem = `⚠️ Alerta de ${alerta.tipo.toLowerCase()}!\n\n📍 *${alerta.cidade.nome} - ${alerta.cidade.estado}*\n🔎 ${descricao}\n🌡️ Temperatura: ${temperatura}°C\n🌧️ Chuva: ${chuva}%\n\n🔔 SMI-PE - Monitoramento Inteligente.`
 
-📍 *${alerta.cidade.nome} - ${alerta.cidade.estado}*
-🔎 ${descricao}
-🌡️ Temperatura: ${temperatura}°C
-🌧️ Chuva: ${chuva}%
-
-🔔 SMI-PE - Monitoramento Inteligente.`
-
-        const enviado = await enviarMensagemWhatsApp(alerta.usuario.telefone, mensagem).then(() => true).catch(() => false)
+        const enviado = await enviarMensagemWhatsApp(alerta.usuario.telefone, mensagem)
 
         await prisma.logEnvio.create({
           data: {
@@ -96,7 +81,7 @@ Experimente já o novo serviço do SMI-PE com alertas personalizados. Responda c
             alertaId: alerta.id,
             tipoMensagem: MensagemTipo.ALERTA,
             conteudo: mensagem,
-            enviadoComSucesso: enviado,
+            enviadoComSucesso: typeof enviado === 'object' && enviado !== null && 'sid' in enviado,
           },
         })
       }
