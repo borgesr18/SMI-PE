@@ -9,7 +9,6 @@ export async function POST() {
   try {
     const horaAtual = new Date().getHours()
 
-    // Enviar mensagem diária de previsão para todos os usuários
     const usuarios = await prisma.usuario.findMany({
       where: {
         aceitaPropaganda: true,
@@ -32,12 +31,11 @@ export async function POST() {
           usuarioId: usuario.id,
           tipoMensagem: MensagemTipo.PROPAGANDA,
           conteudo: mensagem,
-          enviadoComSucesso: !!enviado?.sid, // ✅ Corrigido aqui
+          enviadoComSucesso: !!enviado?.sid,
         },
       })
     }
 
-    // Enviar alertas cadastrados no horário certo
     const alertas = await prisma.alerta.findMany({
       where: {
         ativo: true,
@@ -78,7 +76,7 @@ export async function POST() {
             alertaId: alerta.id,
             tipoMensagem: MensagemTipo.ALERTA,
             conteudo: mensagem,
-            enviadoComSucesso: !!enviado?.sid, // ✅ Corrigido aqui
+            enviadoComSucesso: !!enviado?.sid,
           },
         })
       }
