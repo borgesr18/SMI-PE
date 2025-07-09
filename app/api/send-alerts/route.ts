@@ -2,8 +2,8 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { AlertaTipo, MensagemTipo } from '@prisma/client'
-import { getPrevisaoDoTempo } from '@/lib/weatherService'
-import { enviarWhatsApp } from '@/lib/twilio'
+import { getPrevisao } from '@/lib/weatherService'
+import { enviarMensagemWhatsApp } from '@/lib/twilio'
 
 export async function POST() {
   try {
