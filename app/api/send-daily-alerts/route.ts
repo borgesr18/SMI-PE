@@ -16,8 +16,8 @@ export async function GET() {
     // Buscar todos os usuários com telefone e cidade vinculada
     const usuarios = await prisma.usuario.findMany({
       where: {
-        telefone: { not: null },
-        cidadeId: { not: null }
+        telefone: { not: undefined },
+        cidadeId: { not: undefined }
       },
       include: {
         cidade: true
