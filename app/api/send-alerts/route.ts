@@ -21,7 +21,6 @@ export async function POST() {
 
     for (const usuario of usuarios) {
       const { cidade } = usuario
-
       const previsao = await getPrevisao(cidade.latitude, cidade.longitude)
 
       const mensagem = `Bom dia, ${usuario.nome}! ☀️\n\n📍 *${cidade.nome} - ${cidade.estado}*\n🌡️ Temperatura: ${previsao.temperatura}°C\n☁️ Condição: ${previsao.descricao}\n🌧️ Chance de chuva: ${previsao.chuva}%\n\n💬 *Patrocínio:*\nExperimente já o novo serviço do SMI-PE com alertas personalizados. Responda com "QUERO" e receba as novidades!`
@@ -33,12 +32,12 @@ export async function POST() {
           usuarioId: usuario.id,
           tipoMensagem: MensagemTipo.PROPAGANDA,
           conteudo: mensagem,
-          enviadoComSucesso: enviado,
+          enviadoComSucesso: !!enviado?.sid, // ✅ Corrigido aqui
         },
       })
     }
 
-    // Enviar alertas cadastrados, se estiverem no horário certo
+    // Enviar alertas cadastrados no horário certo
     const alertas = await prisma.alerta.findMany({
       where: {
         ativo: true,
@@ -59,14 +58,13 @@ export async function POST() {
       if (horaAtual < alerta.horaInicio || horaAtual > alerta.horaFim) continue
 
       const previsao = await getPrevisao(alerta.cidade.latitude, alerta.cidade.longitude)
-
       const { chuva, temperatura, descricao } = previsao
 
       let disparar = false
       if (alerta.tipo === AlertaTipo.CHUVA && chuva >= alerta.valorGatilho) disparar = true
       if (alerta.tipo === AlertaTipo.TEMPERATURA && temperatura >= alerta.valorGatilho) disparar = true
       if (alerta.tipo === AlertaTipo.VENTO) {
-        // Adicionar lógica para vento, se tiver
+        // TODO: implementar lógica de vento
       }
 
       if (disparar) {
@@ -80,7 +78,7 @@ export async function POST() {
             alertaId: alerta.id,
             tipoMensagem: MensagemTipo.ALERTA,
             conteudo: mensagem,
-            enviadoComSucesso: enviado,
+            enviadoComSucesso: !!enviado?.sid, // ✅ Corrigido aqui
           },
         })
       }
@@ -92,3 +90,4 @@ export async function POST() {
     return NextResponse.json({ error: 'Erro interno ao enviar alertas.' }, { status: 500 })
   }
 }
+
