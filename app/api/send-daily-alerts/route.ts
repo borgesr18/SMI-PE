@@ -1,65 +1,111 @@
+// app/api/send-daily-alerts/route.ts
+
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import axios from 'axios'
+import { AlertaTipo, MensagemTipo } from '@prisma/client'
+import { getPrevisao } from '@/lib/weatherService'
+import { enviarMensagemWhatsApp } from '@/lib/twilio'
 
-export async function GET() {
+export async function POST() {
   try {
-    const weatherApiKey = process.env.WEATHER_API_KEY
-    const twilioSid = process.env.TWILIO_ACCOUNT_SID
-    const twilioToken = process.env.TWILIO_AUTH_TOKEN
-    const twilioNumber = process.env.TWILIO_WHATSAPP_NUMBER
+    const horaAtual = new Date().getHours()
 
-    if (!weatherApiKey || !twilioSid || !twilioToken || !twilioNumber) {
-      return NextResponse.json({ error: 'Variáveis de ambiente ausentes' }, { status: 500 })
-    }
-
-    // Buscar todos os usuários com telefone e cidade vinculada
+    // 1. Mensagens diárias para todos os usuários
     const usuarios = await prisma.usuario.findMany({
       where: {
-        telefone: { not: undefined },
-        cidadeId: { not: undefined }
+        aceitaPropaganda: true,
+        telefone: { not: '' },
+        cidadeId: { not: null },
       },
       include: {
-        cidade: true
-      }
+        cidade: true,
+      },
     })
 
     for (const usuario of usuarios) {
-      const { nome, telefone, cidade } = usuario
-      const { latitude, longitude, nome: nomeCidade } = cidade
+      const { cidade } = usuario
+      if (!cidade || !usuario.telefone) continue
 
-      // Obter previsão
-      const previsao = await axios.get('https://api.weatherapi.com/v1/current.json', {
-        params: {
-          key: weatherApiKey,
-          q: `${latitude},${longitude}`,
-          lang: 'pt'
-        }
+      const previsao = await getPrevisao(cidade.latitude, cidade.longitude)
+
+      const mensagem = `Bom dia, ${usuario.nome}! ☀️
+
+📍 *${cidade.nome} - ${cidade.estado}*
+🌡️ Temperatura: ${previsao.temperatura}°C
+☁️ Condição: ${previsao.descricao}
+🌧️ Chance de chuva: ${previsao.chuva}%
+
+💬 *Patrocínio:*
+Experimente já o novo serviço do SMI-PE com alertas personalizados. Responda com "QUERO" e receba as novidades!`
+
+      const enviado = await enviarMensagemWhatsApp(usuario.telefone, mensagem).then(() => true).catch(() => false)
+
+      await prisma.logEnvio.create({
+        data: {
+          usuarioId: usuario.id,
+          tipoMensagem: MensagemTipo.PROPAGANDA,
+          conteudo: mensagem,
+          enviadoComSucesso: enviado,
+        },
       })
+    }
 
-      const clima = previsao.data.current
-      const condicao = clima.condition.text
-      const temperatura = clima.temp_c
-      const chuva = clima.precip_mm
+    // 2. Disparo de alertas ativos se horário for compatível
+    const alertas = await prisma.alerta.findMany({
+      where: {
+        ativo: true,
+        usuario: {
+          telefone: { not: '' },
+        },
+      },
+      include: {
+        usuario: true,
+        cidade: true,
+      },
+    })
 
-      const mensagem = `🌤️ Olá, ${nome}!\n\nPrevisão do dia em *${nomeCidade}*:\n${condicao}\n🌡️ ${temperatura}°C\n☔ ${chuva} mm de chuva\n\n📢 *Dica do dia:* Aproveite nossas promoções exclusivas! Responda com "SAIR" para parar de receber.`
+    for (const alerta of alertas) {
+      if (!alerta.cidade || !alerta.usuario?.telefone) continue
+      if (horaAtual < alerta.horaInicio || horaAtual > alerta.horaFim) continue
 
-      // Enviar via WhatsApp
-      await axios.post(`https://api.twilio.com/2010-04-01/Accounts/${twilioSid}/Messages.json`, new URLSearchParams({
-        To: `whatsapp:${telefone}`,
-        From: `whatsapp:${twilioNumber}`,
-        Body: mensagem
-      }), {
-        auth: {
-          username: twilioSid,
-          password: twilioToken
-        }
-      })
+      const previsao = await getPrevisao(alerta.cidade.latitude, alerta.cidade.longitude)
+      const { chuva, temperatura, descricao } = previsao
+
+      let disparar = false
+      if (alerta.tipo === AlertaTipo.CHUVA && chuva >= alerta.valorGatilho) disparar = true
+      if (alerta.tipo === AlertaTipo.TEMPERATURA && temperatura >= alerta.valorGatilho) disparar = true
+      if (alerta.tipo === AlertaTipo.VENTO) {
+        // lógica para vento, se for implementado
+      }
+
+      if (disparar) {
+        const mensagem = `⚠️ Alerta de ${alerta.tipo.toLowerCase()}!
+
+📍 *${alerta.cidade.nome} - ${alerta.cidade.estado}*
+🔎 ${descricao}
+🌡️ Temperatura: ${temperatura}°C
+🌧️ Chuva: ${chuva}%
+
+🔔 SMI-PE - Monitoramento Inteligente.`
+
+        const enviado = await enviarMensagemWhatsApp(alerta.usuario.telefone, mensagem).then(() => true).catch(() => false)
+
+        await prisma.logEnvio.create({
+          data: {
+            usuarioId: alerta.usuarioId,
+            alertaId: alerta.id,
+            tipoMensagem: MensagemTipo.ALERTA,
+            conteudo: mensagem,
+            enviadoComSucesso: enviado,
+          },
+        })
+      }
     }
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Erro no envio diário:', error)
-    return NextResponse.json({ error: 'Erro ao enviar alertas diários' }, { status: 500 })
+    console.error('Erro ao enviar alertas:', error)
+    return NextResponse.json({ error: 'Erro interno ao enviar alertas.' }, { status: 500 })
   }
 }
+
