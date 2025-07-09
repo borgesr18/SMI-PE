@@ -22,11 +22,11 @@ export async function POST() {
     for (const usuario of usuarios) {
       const { cidade } = usuario
 
-      const previsao = await getPrevisaoDoTempo(cidade.latitude, cidade.longitude)
+      const previsao = await getPrevisao(cidade.latitude, cidade.longitude)
 
       const mensagem = `Bom dia, ${usuario.nome}! ☀️\n\n📍 *${cidade.nome} - ${cidade.estado}*\n🌡️ Temperatura: ${previsao.temperatura}°C\n☁️ Condição: ${previsao.descricao}\n🌧️ Chance de chuva: ${previsao.chuva}%\n\n💬 *Patrocínio:*\nExperimente já o novo serviço do SMI-PE com alertas personalizados. Responda com "QUERO" e receba as novidades!`
 
-      const enviado = await enviarWhatsApp(usuario.telefone, mensagem)
+      const enviado = await enviarMensagemWhatsApp(usuario.telefone, mensagem)
 
       await prisma.logEnvio.create({
         data: {
@@ -58,7 +58,7 @@ export async function POST() {
     for (const alerta of alertas) {
       if (horaAtual < alerta.horaInicio || horaAtual > alerta.horaFim) continue
 
-      const previsao = await getPrevisaoDoTempo(alerta.cidade.latitude, alerta.cidade.longitude)
+      const previsao = await getPrevisao(alerta.cidade.latitude, alerta.cidade.longitude)
 
       const { chuva, temperatura, descricao } = previsao
 
@@ -72,7 +72,7 @@ export async function POST() {
       if (disparar) {
         const mensagem = `⚠️ Alerta de ${alerta.tipo.toLowerCase()}!\n\n📍 *${alerta.cidade.nome} - ${alerta.cidade.estado}*\n🔎 ${descricao}\n🌡️ Temperatura: ${temperatura}°C\n🌧️ Chuva: ${chuva}%\n\n🔔 SMI-PE - Monitoramento Inteligente.`
 
-        const enviado = await enviarWhatsApp(alerta.usuario.telefone, mensagem)
+        const enviado = await enviarMensagemWhatsApp(alerta.usuario.telefone, mensagem)
 
         await prisma.logEnvio.create({
           data: {
