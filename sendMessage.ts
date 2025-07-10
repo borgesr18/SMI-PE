@@ -1,20 +1,23 @@
 // sendMessage.ts
+import 'dotenv/config';
 import twilio from 'twilio';
 
-const accountSid = process.env.TWILIO_ACCOUNT_SID!;
-const authToken = process.env.TWILIO_AUTH_TOKEN!;
-const client = twilio(accountSid, authToken);
+const client = twilio(process.env.TWILIO_SID, process.env.TWILIO_AUTH_TOKEN);
+const from = `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`;
+const to = 'whatsapp:+5581988812842'; // Troque por seu número verificado
 
-export async function sendTestMessage() {
+async function main() {
   try {
-    const message = await client.messages.create({
-      from: 'whatsapp:+15558131756', // Número provisionado no Twilio
-      to: 'whatsapp:+5581988812842', // Coloque um número verificado, tipo +55DDDNÚMERO
-      body: '🌤️ Alerta SMI-PE: A previsão para hoje em Caruaru é de névoa com temperatura de 19°C.',
+    const result = await client.messages.create({
+      body: 'Mensagem de teste enviada com sucesso!',
+      from,
+      to,
     });
 
-    console.log('Mensagem enviada:', message.sid);
-  } catch (error) {
-    console.error('Erro ao enviar mensagem:', error);
+    console.log('Mensagem enviada com SID:', result.sid);
+  } catch (err) {
+    console.error('Erro ao enviar mensagem:', err);
   }
 }
+
+main();
